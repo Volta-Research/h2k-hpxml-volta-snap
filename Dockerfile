@@ -15,7 +15,7 @@ ARG RUBY_VERSION=3.2
 
 # Check for custom certificates and configure if present
 COPY .devcontainer/certs* /tmp/certs/
-COPY .devcontainer/scripts/certctl.sh /tmp/certctl.sh
+COPY .devcontainer/scripts/certctl-safe.sh /tmp/certctl.sh
 RUN chmod +x /tmp/certctl.sh && \
   /tmp/certctl.sh install && \
   rm -f /tmp/certctl.sh
@@ -55,13 +55,14 @@ RUN apt-get update && apt-get install -y \
 # This modular approach makes the Dockerfile cleaner and scripts reusable
 COPY .devcontainer/scripts/ /tmp/install-scripts/
 RUN chmod +x /tmp/install-scripts/*.sh && \
-  cp /tmp/install-scripts/certctl.sh /usr/local/bin/certctl && chmod +x /usr/local/bin/certctl && \
+  cp /tmp/install-scripts/certctl-safe.sh /usr/local/bin/certctl && chmod +x /usr/local/bin/certctl && \
   eval "$(certctl env --quiet)" || true && \
-  certctl refresh --quiet || true && \
+  certctl certs-refresh --quiet || true && \
   # Profile hook: show live certificate banner for interactive shells (no output suppression)
   echo 'if [[ "$-" == *i* ]] && [ -x /usr/local/bin/certctl ]; then certctl banner; fi' > /etc/profile.d/10-cert-banner.sh && \
   # Install development tools (order matters for dependencies)
-  /tmp/install-scripts/install-uv.sh && \
+  /tmp/install-scripts/install-user-uv.sh && \
+  cp /root/.local/bin/uv /usr/local/bin/uv && chmod 755 /usr/local/bin/uv && \
   # Clean up
   rm -rf /var/lib/apt/lists/* /tmp/install-scripts
 
