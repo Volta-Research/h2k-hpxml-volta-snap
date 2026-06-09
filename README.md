@@ -24,6 +24,10 @@ Welcome to the complete documentation for H2K-HPXML, the Canadian tool for conve
 - ✅ Comprehensive error handling and validation
 
 
+## Volta SNAP fork
+
+This repository is a public fork used by [Volta Research](https://github.com/Volta-Research) for SNAP platform integration while contributing shared improvements to the upstream project. 
+
 ## 🚀 Getting Started
 
 New to H2K-HPXML? Start here:
