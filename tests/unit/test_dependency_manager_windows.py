@@ -59,7 +59,7 @@ class TestWindowsPortableInstallation:
             # Check that the version-specific path is included
             paths_str = " ".join(str(p) for p in paths)
             assert (
-                "OpenStudio-3.9.0" in paths_str or "OpenStudio" in paths_str
+                "OpenStudio-3.11.0" in paths_str or "OpenStudio" in paths_str
             ), f"Version-specific path not found in {paths}"
 
     def test_write_access_detection(self, temp_install_dir, mock_dm):
@@ -100,7 +100,7 @@ class TestWindowsPortableInstallation:
 
             # Mock directory structure after extraction
             mock_extracted_dir = MagicMock()
-            mock_extracted_dir.name = "OpenStudio-3.9.0+c77fbb9569"
+            mock_extracted_dir.name = "OpenStudio-3.11.0+c77fbb9569"
             mock_extracted_dir.is_dir.return_value = True
             mock_iterdir.return_value = [mock_extracted_dir]
 
@@ -123,7 +123,7 @@ class TestWindowsPortableInstallation:
                 # Verify download was attempted
                 assert mock_urlretrieve.called
                 url_arg = mock_urlretrieve.call_args[0][0]
-                assert "OpenStudio-3.9.0+c77fbb9569-Windows.tar.gz" in url_arg
+                assert "OpenStudio-3.11.0+241b8abb4d-Windows.tar.gz" in url_arg
 
                 # Verify extraction was attempted
                 assert mock_tar.extractall.called
@@ -167,7 +167,7 @@ class TestWindowsPortableInstallation:
     def test_portable_uninstall(self, temp_install_dir, mock_dm):
         """Test portable installation removal."""
         # Create fake portable installation structure
-        portable_install_dir = temp_install_dir.parent / "OpenStudio-3.9.0"
+        portable_install_dir = temp_install_dir.parent / "OpenStudio-3.11.0"
         portable_install_dir.mkdir(parents=True)
         bin_dir = portable_install_dir / "bin"
         bin_dir.mkdir(parents=True)
@@ -261,7 +261,7 @@ class TestWindowsPortableInstallation:
 
             # Mock extracted directory
             mock_extracted_dir = MagicMock()
-            mock_extracted_dir.name = "OpenStudio-3.9.0+c77fbb9569"
+            mock_extracted_dir.name = "OpenStudio-3.11.0+241b8abb4d"
             mock_extracted_dir.is_dir.return_value = True
             mock_iterdir.return_value = [mock_extracted_dir]
 
@@ -289,7 +289,7 @@ class TestWindowsPortableInstallation:
 
             # Mock extracted directory
             mock_extracted_dir = MagicMock()
-            mock_extracted_dir.name = "OpenStudio-3.9.0+c77fbb9569"
+            mock_extracted_dir.name = "OpenStudio-3.11.0+241b8abb4d"
             mock_extracted_dir.is_dir.return_value = True
             mock_iterdir.return_value = [mock_extracted_dir]
 

@@ -146,8 +146,8 @@ class TestWindowsInstallationWorkflow:
 
         # The URL should be constructible
         expected_base = "https://github.com/NREL/OpenStudio/releases/download"
-        expected_version = "v3.9.0"
-        expected_filename = "OpenStudio-3.9.0+c77fbb9569-Windows.tar.gz"
+        expected_version = "v3.11.0"
+        expected_filename = "OpenStudio-3.11.0+241b8abb4d-Windows.tar.gz"
 
         # Construct URL as the method would
         url = (
@@ -193,7 +193,7 @@ class TestWindowsInstallationWorkflow:
 
             with tarfile.open(tarball_path, "w:gz") as tar:
                 # Create a mock OpenStudio directory structure
-                mock_os_dir = Path(temp_dir) / "OpenStudio-3.9.0+c77fbb9569"
+                mock_os_dir = Path(temp_dir) / "OpenStudio-3.11.0+241b8abb4d"
                 mock_os_dir.mkdir()
 
                 bin_dir = mock_os_dir / "bin"
@@ -248,7 +248,7 @@ class TestWindowsInstallationWorkflow:
         assert result is True, "Should return True for backward compatibility"
 
         # _update_single_config_file should also be stubbed
-        mock_binary_path = r"C:\Users\Test\AppData\Local\OpenStudio-3.9.0\bin\openstudio.exe"
+        mock_binary_path = r"C:\Users\Test\AppData\Local\OpenStudio-3.11.0\bin\openstudio.exe"
         result = dm._update_single_config_file(
             "dummy_path.ini", "dummy_hpxml_path", mock_binary_path
         )
@@ -258,7 +258,7 @@ class TestWindowsInstallationWorkflow:
         """Test uninstall detection workflow."""
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create mock portable installation
-            install_dir = Path(temp_dir) / "OpenStudio-3.9.0"
+            install_dir = Path(temp_dir) / "OpenStudio-3.11.0"
             install_dir.mkdir()
 
             bin_dir = install_dir / "bin"
