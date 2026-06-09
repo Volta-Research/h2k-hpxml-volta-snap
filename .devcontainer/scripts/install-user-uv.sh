@@ -33,13 +33,21 @@ echo "ℹ️ Using UV version ${UV_VERSION} (source: ${_uv_version_source})"
 INSTALL_DIR="$HOME/.local/bin"
 mkdir -p "$INSTALL_DIR"
 
-echo "📥 Downloading UV v${UV_VERSION}..."
+ARCH=$(uname -m)
+case "$ARCH" in
+    x86_64)  UV_ARCH="x86_64-unknown-linux-gnu" ;;
+    aarch64) UV_ARCH="aarch64-unknown-linux-gnu" ;;
+    arm64)   UV_ARCH="aarch64-unknown-linux-gnu" ;;
+    *) echo "❌ Unsupported architecture: $ARCH" >&2; exit 1 ;;
+esac
+
+echo "📥 Downloading UV v${UV_VERSION} for ${UV_ARCH}..."
 curl ${CURL_FLAGS} --connect-timeout 30 -o /tmp/uv.tar.gz \
-    "https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-x86_64-unknown-linux-gnu.tar.gz"
+    "https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-${UV_ARCH}.tar.gz"
 
 cd /tmp
 tar -xzf uv.tar.gz
-mv uv-x86_64-unknown-linux-gnu/uv "$INSTALL_DIR/"
+mv uv-${UV_ARCH}/uv "$INSTALL_DIR/"
 chmod +x "$INSTALL_DIR/uv"
 rm -rf /tmp/uv*
 

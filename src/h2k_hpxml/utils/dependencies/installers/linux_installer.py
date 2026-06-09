@@ -180,8 +180,8 @@ class LinuxInstaller(BaseInstaller):
                 with tarfile.open(tarball_path, "r:gz") as tar:
                     tar.extractall(temp_extract)
 
-                # Find the actual OpenStudio directory (should be usr/local/openstudio-3.9.0)
-                # The tarball structure is: OpenStudio-3.9.0+.../usr/local/openstudio-3.9.0/
+                # Find the actual OpenStudio directory (should be usr/local/openstudio-3.11.0)
+                # The tarball structure is: OpenStudio-3.11.0+.../usr/local/openstudio-3.11.0/
                 extracted_root = None
                 for root, dirs, _files in os.walk(temp_extract):
                     if "bin" in dirs and os.path.exists(os.path.join(root, "bin", "openstudio")):

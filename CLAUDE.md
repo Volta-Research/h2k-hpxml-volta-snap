@@ -414,7 +414,7 @@ Managed via `os-setup` command which auto-detects and installs on Windows/Linux:
 
 #### Windows Installation (Portable)
 - **No admin rights required** - Uses portable tar.gz installation
-- **Installation location**: `%LOCALAPPDATA%\OpenStudio-3.9.0`
+- **Installation location**: `%LOCALAPPDATA%\OpenStudio-3.11.0`
 - **Fallback location**: `%USERPROFILE%\OpenStudio` if LOCALAPPDATA not writable
 - **Size**: ~500MB extracted
 - **Automatic PATH setup**: Optional PowerShell command provided
@@ -449,7 +449,7 @@ All Docker containers include pre-installed OpenStudio and dependencies, elimina
 ### Installation Issues
 - **OpenStudio not found**: Run `os-setup --auto-install` or use Docker containers
   - **Windows**: Now uses portable tar.gz installation (no admin rights required)
-  - **Installation location**: `%LOCALAPPDATA%\OpenStudio-3.9.0` or `%USERPROFILE%\OpenStudio`
+  - **Installation location**: `%LOCALAPPDATA%\OpenStudio-3.11.0` or `%USERPROFILE%\OpenStudio`
   - **No admin privileges needed**: Portable installation extracts to user directory
 - **Missing dependencies**: Ensure you installed with `uv pip install -e ".[dev]"` for development (or `pip install -e ".[dev]"` if not using uv)
 - **Config file issues**: Check `config/conversionconfig.ini` exists in project root

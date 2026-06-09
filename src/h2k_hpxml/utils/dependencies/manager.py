@@ -305,7 +305,7 @@ class DependencyManager:
         Returns:
             bool: True if setup successful, False otherwise
         """
-        from ..config.manager import ConfigManager
+        from ...config.manager import ConfigManager
 
         click.echo("🔧 Setting up user configuration")
 
