@@ -66,6 +66,34 @@
             "hpxml": "~HPXML,Building,BuildingDetails,BuildingSummary,BuildingConstruction,ConditionedFloorArea"
         }
     },
+    "murb_num_building_storeys": {
+        "decimals": 0,
+        "address": {
+            "h2k": "HouseFile,House,Specifications,NumberOf,@storeysInBuilding",
+            "hpxml": "~HPXML,Building,BuildingDetails,BuildingSummary,BuildingConstruction,XXX"
+        }
+    },
+    "murb_num_dwelling_units": {
+        "decimals": 0,
+        "address": {
+            "h2k": "HouseFile,House,Specifications,NumberOf,@dwellingUnits",
+            "hpxml": "~HPXML,Building,BuildingDetails,BuildingSummary,BuildingConstruction,XXX"
+        }
+    },
+    "murb_num_non_res_units": {
+        "decimals": 0,
+        "address": {
+            "h2k": "HouseFile,House,Specifications,NumberOf,@nonResUnits",
+            "hpxml": "~HPXML,Building,BuildingDetails,BuildingSummary,BuildingConstruction,XXX"
+        }
+    },
+    "murb_num_units_visited": {
+        "decimals": 0,
+        "address": {
+            "h2k": "HouseFile,House,Specifications,NumberOf,@storeysInBuilding",
+            "hpxml": "~HPXML,Building,BuildingDetails,BuildingSummary,BuildingConstruction,XXX"
+        }
+    },
     "num_bedrooms": {
         "decimals": 0,
         "address": {
@@ -123,6 +151,18 @@
             "hpxml": "~HPXML,Building,BuildingDetails,Enclosure,Walls,Wall,Area"
         }
     },
+    "murb_common_wall_area":{
+        "units": {
+            "unit_type": "area",
+            "h2k_units": "m2",
+            "hpxml_units": "ft2"
+        },
+        "decimals": 2,
+        "address": {
+            "h2k": "HouseFile,House,NaturalAirInfiltration,Specifications,CommonSurfaceWall,@surfaceWall",
+            "hpxml": "~HPXML,Building,BuildingDetails,Enclosure,Walls,Wall,Area"
+        }
+    },
     "exp_floor_r_value": {
         "units": {
             "unit_type": "thermal_resistance",
@@ -145,6 +185,18 @@
         "address": {
             "h2k": "Measurements,@area",
             "hpxml": "HPXML,Building,BuildingDetails,Enclosure,Floors,Floor,Area"
+        }
+    },
+    "murb_common_floor_area":{
+        "units": {
+            "unit_type": "area",
+            "h2k_units": "m2",
+            "hpxml_units": "ft2"
+        },
+        "decimals": 2,
+        "address": {
+            "h2k": "HouseFile,House,NaturalAirInfiltration,Specifications,CommonSurfaceFloor,@surfaceFloor",
+            "hpxml": "~HPXML,Building,BuildingDetails,Enclosure,Floors,Floor,Area"
         }
     },
     "door_r_value": {
@@ -317,6 +369,18 @@
         "address": {
             "h2k": "Measurements,@area",
             "hpxml": "HPXML,Building,BuildingDetails,Enclosure,Roofs,Roof,Area"
+        }
+    },
+    "murb_common_ceiling_area":{
+        "units": {
+            "unit_type": "area",
+            "h2k_units": "m2",
+            "hpxml_units": "ft2"
+        },
+        "decimals": 2,
+        "address": {
+            "h2k": "HouseFile,House,NaturalAirInfiltration,Specifications,CommonSurfaceCeiling,@surfaceCeiling",
+            "hpxml": "~HPXML,Building,BuildingDetails,Enclosure,Floors,Floor,Area"
         }
     },
     "ceiling_length": {

@@ -60,8 +60,13 @@ def process_building_details(
             }
         )
 
+        logger.info(f"BUILDING TYPE: {model_data.get_building_detail("building_type")}")
         # Handle multi-unit residential building (MURB) details
+        # Note that HPXML has a method of modelling individual dwellings, but coming from an h2k file, everything will always be a whole building/unit simulation.
+        # There is no explicit difference between how a house and single-murb are modelled. All differences com from the set up of components.
         if model_data.get_building_detail("building_type") != "house":
+            # MURB Types are: "single-murb", "whole-murb"
+            # Most of these are not used by HPXML (in the way they're defined in h2k)
             murb_unit_counts = obj.get_val(h2k_dict, "HouseFile,House,Specifications,NumberOf")
             model_data.set_building_details(
                 {
@@ -73,6 +78,9 @@ def process_building_details(
                     "non_res_unit_area": h2k.get_number_field(h2k_dict, "non_res_unit_area"),
                 }
             )
+
+            #Other fields updated when building type is "whole-murb":
+            # Conditioned floor area is updated with two extra fields: common_space_area and non_res_unit_area
 
         # ================ 5. HPXML Section: Building Summary ================
         # Building site details
