@@ -132,7 +132,7 @@ def get_heat_pump(h2k_dict, model_data):
                         **(
                             {}
                             if switchover_type == "balance"
-                            else {"BackupHeatingSwitchoverTemperature": switchover_temp}
+                            else {"BackupHeatingLockoutTemperature": switchover_temp}
                         ),
                     }
                     if heat_pump_backup_type == "separate"
@@ -154,7 +154,7 @@ def get_heat_pump(h2k_dict, model_data):
                         **(
                             {}
                             if switchover_type == "balance"
-                            else {"BackupHeatingSwitchoverTemperature": switchover_temp}
+                            else {"BackupHeatingLockoutTemperature": switchover_temp}
                         ),
                     }
                     if heat_pump_backup_type == "integrated"
@@ -213,7 +213,7 @@ def get_heat_pump(h2k_dict, model_data):
                         **(
                             {}
                             if switchover_type == "balance"
-                            else {"BackupHeatingSwitchoverTemperature": switchover_temp}
+                            else {"BackupHeatingLockoutTemperature": switchover_temp}
                         ),
                     }
                     if heat_pump_backup_type == "separate"
@@ -235,7 +235,7 @@ def get_heat_pump(h2k_dict, model_data):
                         **(
                             {}
                             if switchover_type == "balance"
-                            else {"BackupHeatingSwitchoverTemperature": switchover_temp}
+                            else {"BackupHeatingLockoutTemperature": switchover_temp}
                         ),
                     }
                     if heat_pump_backup_type == "integrated"
@@ -292,7 +292,7 @@ def get_heat_pump(h2k_dict, model_data):
                     **(
                         {}
                         if switchover_type == "balance"
-                        else {"BackupHeatingSwitchoverTemperature": switchover_temp}
+                        else {"BackupHeatingLockoutTemperature": switchover_temp}
                     ),
                 }
                 if heat_pump_backup_type == "separate"
@@ -314,7 +314,7 @@ def get_heat_pump(h2k_dict, model_data):
                     **(
                         {}
                         if switchover_type == "balance"
-                        else {"BackupHeatingSwitchoverTemperature": switchover_temp}
+                        else {"BackupHeatingLockoutTemperature": switchover_temp}
                     ),
                 }
                 if heat_pump_backup_type == "integrated"
@@ -363,7 +363,7 @@ def get_heat_pump(h2k_dict, model_data):
                     **(
                         {}
                         if switchover_type == "balance"
-                        else {"BackupHeatingSwitchoverTemperature": switchover_temp}
+                        else {"BackupHeatingLockoutTemperature": switchover_temp}
                     ),
                 }
                 if heat_pump_backup_type == "separate"
@@ -385,7 +385,7 @@ def get_heat_pump(h2k_dict, model_data):
                     **(
                         {}
                         if switchover_type == "balance"
-                        else {"BackupHeatingSwitchoverTemperature": switchover_temp}
+                        else {"BackupHeatingLockoutTemperature": switchover_temp}
                     ),
                 }
                 if heat_pump_backup_type == "integrated"
