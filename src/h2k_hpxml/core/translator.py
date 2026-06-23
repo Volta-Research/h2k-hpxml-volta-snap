@@ -74,17 +74,6 @@ def h2ktohpxml(h2k_string="", config=None):
     _process_systems_and_loads(h2k_dict, hpxml_dict, model_data)
 
     # ================ 9. Extras (TESTING) ================
-    # hpxml_dict["HPXML"]["SoftwareInfo"]["extension"]["UnavailablePeriods"] = {
-    #     "UnavailablePeriod": {
-    #         "ColumnName": "Power Outage",
-    #         "BeginMonth": 1,
-    #         "BeginDayOfMonth": 28,
-    #         "BeginHourOfDay": 0,
-    #         "EndMonth": 1,
-    #         "EndDayOfMonth": 30,
-    #         "EndHourOfDay": 24,
-    #     }
-    # }
 
     # ================ 10. Finalize HPXML output ================
     return _finalize_hpxml_output(hpxml_dict, h2k_dict, model_data, translation_mode)

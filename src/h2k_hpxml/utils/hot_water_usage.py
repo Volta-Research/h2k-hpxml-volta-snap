@@ -11,8 +11,6 @@ def calc_hot_to_mixed_ratio(model_data) -> float:
     t_inlet_f = model_data.get_building_detail("water_heater_inlet_temp_f")
     t_set_f = model_data.get_building_detail("hot_water_setpoint_f")
 
-    print("t_inlet_f", t_inlet_f)
-    print("t_set_f", t_set_f)
     if t_inlet_f is None or t_set_f is None:
         return 1.0
     if t_set_f <= t_inlet_f:
@@ -49,7 +47,7 @@ def get_fixtures_multiplier(h2k_dict, model_data):
     base_mixed_water_usgpd = (fixture_usgpd + waste_usgpd)
 
     hot_to_mixed_ratio = calc_hot_to_mixed_ratio(model_data)
-    print("hot_to_mixed_ratio", hot_to_mixed_ratio)
+
     fixtures_multiplier = target_fixture_waste_usgpd / (base_mixed_water_usgpd * hot_to_mixed_ratio)
 
     return fixtures_multiplier
