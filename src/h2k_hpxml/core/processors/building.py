@@ -11,14 +11,16 @@ from ...core.model import ModelData
 from ...exceptions import HPXMLGenerationError
 from ...types import H2KDict
 from ...types import HPXMLDict
+from ...utils.hot_water_setpoint import resolve_hot_water_setpoint_f
 from ...utils.logging import get_logger
+from ...utils.operating_conditions import apply_operating_conditions
 
 # Get logger for this module
 logger = get_logger(__name__)
 
 
 def process_building_details(
-    h2k_dict: H2KDict, hpxml_dict: HPXMLDict, model_data: ModelData
+    h2k_dict: H2KDict, hpxml_dict: HPXMLDict, model_data: ModelData, operating_condition: str = "SOC"
 ) -> None:
     """
     Process building details and populate model data and HPXML structure.
@@ -82,6 +84,16 @@ def process_building_details(
             #Other fields updated when building type is "whole-murb":
             # Conditioned floor area is updated with two extra fields: common_space_area and non_res_unit_area
 
+        apply_operating_conditions(model_data, operating_condition)
+        model_data.set_building_details(
+            {"hot_water_setpoint_f": resolve_hot_water_setpoint_f(h2k_dict)}
+        )
+        logger.info(
+            "Operating condition: %s (%s occupants)",
+            model_data.get_operating_condition_mode(),
+            model_data.get_operating_condition("num_occupants"),
+        )
+
         # ================ 5. HPXML Section: Building Summary ================
         # Building site details
         building_sum_site_dict = hpxml_dict["HPXML"]["Building"]["BuildingDetails"][
@@ -103,8 +115,9 @@ def process_building_details(
             h2k_dict, "ground_conductivity"
         )
 
-        # Building occupancy
-        num_occupants = 3  # SOC Hardcoded
+        # Building occupancy — NumberofResidents selects OS-HPXML's operational
+        # (n_occ) path for appliance/fixture hot water; omit it and OS uses asset (nbeds) equations.
+        num_occupants = model_data.get_operating_condition("num_occupants", 3)
         hpxml_dict["HPXML"]["Building"]["BuildingDetails"]["BuildingSummary"][
             "BuildingOccupancy"
         ] = {"NumberofResidents": num_occupants}

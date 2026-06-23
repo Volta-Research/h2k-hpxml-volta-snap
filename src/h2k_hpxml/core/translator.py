@@ -6,6 +6,7 @@ Inputs: h2k string in xml format, config class instance to handle config params
 Outputs: hpxml string
 """
 
+from ..config import ConfigManager
 from ..types import H2KDict
 from ..types import HPXMLDict
 from ..types import TranslationMode
@@ -57,15 +58,14 @@ def h2ktohpxml(h2k_string="", config=None):
     h2k_dict, hpxml_dict = _load_and_parse_templates(h2k_string)
 
     # ================ 2. Initialize model data and process building details ================
+    config_manager = ConfigManager()
     model_data: Model.ModelData = Model.ModelData()
-    _process_building_details(h2k_dict, hpxml_dict, model_data)
+    model_data.set_config_manager(config_manager)
+    operating_condition = config.get("operating_condition", "SOC")
+    _process_building_details(h2k_dict, hpxml_dict, model_data, operating_condition)
 
     # ================ 3. Process weather data ================
-    # Create ConfigManager for weather processing
-    from ..config import ConfigManager
-
-    config_manager = ConfigManager()
-    _process_weather_data(h2k_dict, hpxml_dict, translation_mode, config_manager)
+    _process_weather_data(h2k_dict, hpxml_dict, translation_mode, config_manager, model_data)
 
     # ================ 7. Process enclosure components ================
     _process_enclosure_components(h2k_dict, hpxml_dict, model_data, add_test_wall)
@@ -73,5 +73,18 @@ def h2ktohpxml(h2k_string="", config=None):
     # ================ 8. Process systems and loads ================
     _process_systems_and_loads(h2k_dict, hpxml_dict, model_data)
 
-    # ================ 9. Finalize HPXML output ================
+    # ================ 9. Extras (TESTING) ================
+    # hpxml_dict["HPXML"]["SoftwareInfo"]["extension"]["UnavailablePeriods"] = {
+    #     "UnavailablePeriod": {
+    #         "ColumnName": "Power Outage",
+    #         "BeginMonth": 1,
+    #         "BeginDayOfMonth": 28,
+    #         "BeginHourOfDay": 0,
+    #         "EndMonth": 1,
+    #         "EndDayOfMonth": 30,
+    #         "EndHourOfDay": 24,
+    #     }
+    # }
+
+    # ================ 10. Finalize HPXML output ================
     return _finalize_hpxml_output(hpxml_dict, h2k_dict, model_data, translation_mode)

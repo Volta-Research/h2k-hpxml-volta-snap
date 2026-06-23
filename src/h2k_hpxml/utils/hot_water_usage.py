@@ -2,8 +2,26 @@
 
 from ..core import h2k_parser as h2k
 
+# OS-HPXML specifies mixed water flow for fixtures/waste (hotwater_appliances.rb)
+T_MIX_F = 105.0
+
+
+def calc_hot_to_mixed_ratio(model_data) -> float:
+    """Convert H2K hot-water volume targets to OS mixed-water fixture flows."""
+    t_inlet_f = model_data.get_building_detail("water_heater_inlet_temp_f")
+    t_set_f = model_data.get_building_detail("hot_water_setpoint_f")
+
+    print("t_inlet_f", t_inlet_f)
+    print("t_set_f", t_set_f)
+    if t_inlet_f is None or t_set_f is None:
+        return 1.0
+    if t_set_f <= t_inlet_f:
+        return 1.0
+    return (T_MIX_F - t_inlet_f) / (t_set_f - t_inlet_f)
+
 
 def get_fixtures_multiplier(h2k_dict, model_data):
+    #Target accounts for other hot water use
     target_daily_hot_water_usgpd = h2k.get_number_field(h2k_dict, "total_daily_hot_water")
 
     clothes_washer_usgpd = model_data.get_building_detail("clothes_washer_usgpd")
@@ -21,27 +39,18 @@ def get_fixtures_multiplier(h2k_dict, model_data):
         )
         return 1
 
-    num_occupants = model_data.get_building_detail("num_occupants")
+    num_occupants = model_data.get_operating_condition("num_occupants")
 
-    frac_low_flow_fixtures = 0  # SOC Hardcoded
+    frac_low_flow_fixtures = 0  #TODO: update with ROC if applicable
 
     fixture_usgpd = calc_fixture_hot_water(num_occupants, frac_low_flow_fixtures)
     waste_usgpd = calc_distribution_waste(num_occupants, frac_low_flow_fixtures)
-    # print("fixture_usgpd", fixture_usgpd)
-    # print("waste_usgpd", waste_usgpd)
 
-    # Multiplying the gpd values by a calibration equation
-    # Even though our fixture and waste gpd values match those calculated in the HPXML-OS workflow, these values appear to be "design" values, and aren't necessarily what the simulation experiences
-    # The calibration equation assumes that the default fixture schedule is used. Any changes to the schedule should be reflected here and considered when re-evaluating the equation below
-    factor = (
-        0.00495951595602586 * (target_daily_hot_water_usgpd**2)
-        - 0.469835725564538 * target_daily_hot_water_usgpd
-        + 11.6641677398892
-    )
+    base_mixed_water_usgpd = (fixture_usgpd + waste_usgpd)
 
-    calculated_fixture_waste_usgpd = factor * (fixture_usgpd + waste_usgpd)
-
-    fixtures_multiplier = target_fixture_waste_usgpd / calculated_fixture_waste_usgpd
+    hot_to_mixed_ratio = calc_hot_to_mixed_ratio(model_data)
+    print("hot_to_mixed_ratio", hot_to_mixed_ratio)
+    fixtures_multiplier = target_fixture_waste_usgpd / (base_mixed_water_usgpd * hot_to_mixed_ratio)
 
     return fixtures_multiplier
 

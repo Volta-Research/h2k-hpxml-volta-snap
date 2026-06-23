@@ -811,6 +811,35 @@
         "decimals": 2,
         "default": 190
     },
+    "clothes_washer_cycles_per_occ_week": {
+        "address": {
+            "h2k": "HouseFile,House,BaseLoads,WaterUsage,ClothesWasher,@numberPerOccupantPerWeek",
+            "hpxml": "~HPXML,Building,BuildingDetails,Appliances,ClothesWasher,LabelUsage"
+        },
+        "decimals": 2,
+        "default": 1.9
+    },
+    "dishwasher_cycles_per_occ_week": {
+        "address": {
+            "h2k": "HouseFile,House,BaseLoads,WaterUsage,DishWasher,@numberPerOccupantPerWeek",
+            "hpxml": "~HPXML,Building,BuildingDetails,Appliances,Dishwasher,LabelUsage"
+        },
+        "decimals": 2,
+        "default": 1.9
+    },
+    "other_hot_water_use": {
+        "address": {
+            "h2k": "HouseFile,House,BaseLoads,WaterUsage,@otherHotWaterUse",
+            "hpxml": "~HPXML,Building,BuildingDetails,Systems,WaterHeating,WaterFixture,extension,WaterFixtureUsageMultiplier"
+        },
+        "decimals": 2,
+        "default": 2.92,
+        "units": {
+            "unit_type": "volume",
+            "h2k_units": "L",
+            "hpxml_units": "gal_us"
+        }
+    },
     "hot_water_tank_volume": {
         "address": {
             "h2k": "TankVolume,@value",

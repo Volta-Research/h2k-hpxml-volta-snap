@@ -42,6 +42,7 @@ def validate_and_load_configuration(h2k_string, config):
     # Extract configuration parameters
     add_test_wall = config.get("add_test_wall", False)
     translation_mode = config.get("translation_mode", "SOC")
+    operating_condition = config.get("operating_condition", "SOC")
 
     # Validate translation mode
     valid_modes = ["SOC", "ASHRAE140"]
@@ -52,7 +53,17 @@ def validate_and_load_configuration(h2k_string, config):
             config_value=translation_mode,
         )
 
+    valid_operating_conditions = ["SOC", "ROC"]
+    if operating_condition not in valid_operating_conditions:
+        raise ConfigurationError(
+            f"Invalid operating condition: {operating_condition}. "
+            f"Must be one of {valid_operating_conditions}",
+            config_key="operating_condition",
+            config_value=operating_condition,
+        )
+
     logger.info(f"Translation Mode: {translation_mode}")
+    logger.info(f"Operating Condition: {operating_condition}")
     logger.debug(f"Add test wall: {add_test_wall}")
 
     return add_test_wall, translation_mode
