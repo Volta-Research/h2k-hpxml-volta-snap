@@ -307,24 +307,24 @@ def compare_os_h2k_annual(h2k_results=None, os_results=None):
         / 365,
     }
 
-    compare_dict["Clothes Washer Usage Gpd"] = {
-        "h2k": -1,
-        "hpxml": os_results.get("Hot Water: Clothes Washer (gal)", 0) / 365,
-    }
+    # compare_dict["Clothes Washer Usage Gpd"] = {
+    #     "h2k": -1,
+    #     "hpxml": os_results.get("Hot Water: Clothes Washer (gal)", 0) / 365,
+    # }
 
-    compare_dict["Dishwasher Usage Gpd"] = {
-        "h2k": -1,
-        "hpxml": os_results.get("Hot Water: Dishwasher (gal)", 0) / 365,
-    }
+    # compare_dict["Dishwasher Usage Gpd"] = {
+    #     "h2k": -1,
+    #     "hpxml": os_results.get("Hot Water: Dishwasher (gal)", 0) / 365,
+    # }
 
-    compare_dict["Fixtures Usage Gpd"] = {
-        "h2k": -1,
-        "hpxml": os_results.get("Hot Water: Fixtures (gal)", 0) / 365,
-    }
-    compare_dict["Distribution Waste Usage Gpd"] = {
-        "h2k": -1,
-        "hpxml": os_results.get("Hot Water: Distribution Waste (gal)", 0) / 365,
-    }
+    # compare_dict["Fixtures Usage Gpd"] = {
+    #     "h2k": -1,
+    #     "hpxml": os_results.get("Hot Water: Fixtures (gal)", 0) / 365,
+    # }
+    # compare_dict["Distribution Waste Usage Gpd"] = {
+    #     "h2k": -1,
+    #     "hpxml": os_results.get("Hot Water: Distribution Waste (gal)", 0) / 365,
+    # }
 
     # Fuel use
     fuel_compare_dict = {

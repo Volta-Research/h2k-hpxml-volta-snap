@@ -1,9 +1,59 @@
 from ..core import h2k_parser as h2k
+from ..utils.operating_conditions import SOC_MURB_UNIT_PARAMETERS
 
 # ANSI/RESNET 301-2019 operational constants (match OS-HPXML hotwater_appliances.rb)
 GAL_PER_L = 3.785411784
 CW_LITERS_PER_CYCLE = 54
 DW_LITERS_PER_CYCLE = 19
+CW_CAPACITY = 3
+CW_IMEF = 0.9
+DRYER_ACY_CAPACITY_FACTOR = (3.0 * 2.08 + 1.59) / (CW_CAPACITY * 2.08 + 1.59)
+
+
+class _UnitOperatingModelData:
+    """Per-unit SOC operating targets for MURB appliance label derivation."""
+
+    def __init__(self, parent_model_data):
+        self._parent = parent_model_data
+
+    def get_operating_condition(self, key, default=None):
+        if key in SOC_MURB_UNIT_PARAMETERS:
+            return SOC_MURB_UNIT_PARAMETERS[key]
+        return self._parent.get_operating_condition(key, default)
+
+    def set_building_details(self, details):
+        pass
+
+    def add_warning_message(self, message):
+        self._parent.add_warning_message(message)
+
+
+def _is_multi_unit_murb(model_data):
+    """True for whole-building MURB models with more than one dwelling unit."""
+    return (
+        model_data.get_building_detail("building_type") == "whole-murb"
+        and int(model_data.get_building_detail("res_units") or 1) > 1
+    )
+
+
+def _unit_num_occupants():
+    return SOC_MURB_UNIT_PARAMETERS["num_occupants"]
+
+
+def _unit_operating_model(model_data):
+    return _UnitOperatingModelData(model_data)
+
+
+def _calc_usage_multiplier(target, unscaled):
+    if target is None or unscaled is None or unscaled <= 0:
+        return 1.0
+    return target / unscaled
+
+
+def _usage_multiplier_extension(multiplier):
+    if multiplier != 1.0:
+        return {"extension": {"UsageMultiplier": multiplier}}
+    return {}
 
 
 def get_appliances(h2k_dict, model_data=None):
@@ -27,17 +77,18 @@ def get_appliances(h2k_dict, model_data=None):
         cw_elec_rate,
         cw_gas_rate,
         cw_imef,
-    ) = calc_required_clothes_washer_specs(h2k_dict, num_occupants, model_data)
+        cw_usage_multiplier,
+    ) = _resolve_clothes_washer_specs(h2k_dict, num_occupants, model_data)
 
     (
         dw_label_energy_rating,
         dw_label_cycles_year,
         dw_capacity,
         dw_ghwc,
-    ) = calc_required_dishwasher_specs(h2k_dict, num_occupants, model_data)
+        dw_usage_multiplier,
+    ) = _resolve_dishwasher_specs(h2k_dict, num_occupants, model_data)
 
-    dryer_combined_energy_factor = calc_required_dryer_specs(
-        res_facility_type,
+    dryer_combined_energy_factor, dryer_usage_multiplier = _resolve_dryer_specs(
         num_occupants,
         model_data,
         cw_label_energy_rating,
@@ -61,6 +112,7 @@ def get_appliances(h2k_dict, model_data=None):
             "LabelAnnualGasCost": cw_ghwc,
             "LabelUsage": cw_label_cycles_year / 52,
             "Capacity": cw_capacity,
+            **_usage_multiplier_extension(cw_usage_multiplier),
         },
         "ClothesDryer": {
             "SystemIdentifier": {"@id": "ClothesDryer1"},
@@ -69,6 +121,7 @@ def get_appliances(h2k_dict, model_data=None):
             "CombinedEnergyFactor": dryer_combined_energy_factor,
             "Vented": True,
             "VentedFlowRate": dryer_exhaust or 80.52,  # default
+            **_usage_multiplier_extension(dryer_usage_multiplier),
         },
         "Dishwasher": {
             "SystemIdentifier": {"@id": "Dishwasher1"},
@@ -79,6 +132,7 @@ def get_appliances(h2k_dict, model_data=None):
             "LabelGasRate": 1.09,  # Defaults used
             "LabelAnnualGasCost": dw_ghwc,
             "LabelUsage": dw_label_cycles_year / 52,
+            **_usage_multiplier_extension(dw_usage_multiplier),
         },
         "Refrigerator": {
             "SystemIdentifier": {"@id": "Refrigerator1"},
@@ -118,6 +172,125 @@ def get_appliances(h2k_dict, model_data=None):
 #       fail "Unexpected residential facility type: #{unit_type}."
 #     end
 #   end
+
+def _calc_dryer_residual_moisture(cw_label_energy_rating, cw_capacity, cw_imef):
+    return (0.97 * (cw_capacity / cw_imef) - cw_label_energy_rating / 312.0) / (
+        (2.0104 * cw_capacity + 1.4242) * 0.455
+    ) + 0.04
+
+
+def _calc_dryer_annual_cycles(num_occupants, cw_capacity=CW_CAPACITY):
+    """Operational dryer cycle count (OS hotwater_appliances.rb calc_clothes_dryer_energy)."""
+    scy = 123.0 + 61.0 * num_occupants
+    return scy * DRYER_ACY_CAPACITY_FACTOR
+
+
+def _resolve_clothes_washer_specs(h2k_dict, num_occupants, model_data):
+    """Return clothes washer label fields; multi-unit MURBs use per-unit labels + UsageMultiplier."""
+    building_specs = calc_required_clothes_washer_specs(h2k_dict, num_occupants, model_data)
+    if not _is_multi_unit_murb(model_data):
+        return (*building_specs, 1.0)
+
+    target_gpd = model_data.get_building_detail("clothes_washer_usgpd")
+    unit_specs = calc_required_clothes_washer_specs(
+        h2k_dict, _unit_num_occupants(), _unit_operating_model(model_data)
+    )
+    if target_gpd is not None:
+        model_data.set_building_details({"clothes_washer_usgpd": target_gpd})
+
+    unscaled_gpd = calc_actual_clothes_washer_usgpd(
+        num_occupants,
+        unit_specs[1] / 52,
+        unit_specs[3],
+        unit_specs[5],
+        unit_specs[4],
+        unit_specs[2],
+        unit_specs[0],
+    )
+    return (*unit_specs, _calc_usage_multiplier(target_gpd, unscaled_gpd))
+
+
+def _resolve_dishwasher_specs(h2k_dict, num_occupants, model_data):
+    """Return dishwasher label fields; multi-unit MURBs use per-unit labels + UsageMultiplier."""
+    building_specs = calc_required_dishwasher_specs(h2k_dict, num_occupants, model_data)
+    if not _is_multi_unit_murb(model_data):
+        return (*building_specs, 1.0)
+
+    target_gpd = model_data.get_building_detail("dishwasher_usgpd")
+    unit_specs = calc_required_dishwasher_specs(
+        h2k_dict, _unit_num_occupants(), _unit_operating_model(model_data)
+    )
+    if target_gpd is not None:
+        model_data.set_building_details({"dishwasher_usgpd": target_gpd})
+
+    unscaled_gpd = calc_actual_dishwasher_usgpd(
+        num_occupants,
+        unit_specs[1] / 52,
+        unit_specs[3],
+        1.09,
+        unit_specs[0],
+        0.12,
+        unit_specs[2],
+    )
+    return (*unit_specs, _calc_usage_multiplier(target_gpd, unscaled_gpd))
+
+
+def _resolve_dryer_specs(
+    num_occupants,
+    model_data,
+    cw_label_energy_rating,
+    cw_capacity,
+    cw_imef,
+):
+    """Return dryer CEF; multi-unit MURBs use per-unit CEF + UsageMultiplier."""
+    target_kwh = model_data.get_operating_condition("annual_elec_clothes_dryer")
+    if not _is_multi_unit_murb(model_data):
+        return (
+            calc_required_dryer_specs(
+                num_occupants,
+                model_data,
+                cw_label_energy_rating,
+                cw_capacity,
+                cw_imef,
+            ),
+            1.0,
+        )
+
+    unit_model = _unit_operating_model(model_data)
+    cef = calc_required_dryer_specs(
+        _unit_num_occupants(),
+        unit_model,
+        cw_label_energy_rating,
+        cw_capacity,
+        cw_imef,
+    )
+    unscaled_kwh = calc_actual_dryer_kwh(
+        num_occupants,
+        cw_label_energy_rating,
+        cw_capacity,
+        cw_imef,
+        cef,
+    )
+    return cef, _calc_usage_multiplier(target_kwh, unscaled_kwh)
+
+
+def calc_actual_dryer_kwh(
+    num_occupants,
+    cw_label_energy_rating,
+    cw_capacity,
+    cw_imef,
+    combined_energy_factor,
+    usage_multiplier=1.0,
+):
+    """Forward OS-HPXML operational clothes dryer annual electricity (kWh)."""
+    rmc = _calc_dryer_residual_moisture(cw_label_energy_rating, cw_capacity, cw_imef)
+    if rmc <= 0.04 or combined_energy_factor <= 0:
+        return 0.0
+
+    acy = _calc_dryer_annual_cycles(num_occupants, cw_capacity)
+    annual_kwh = (((rmc - 0.04) * 100) / 55.5) * (8.45 / combined_energy_factor) * acy
+    return annual_kwh * usage_multiplier
+
 
 def get_adjusted_num_bedrooms(res_facility_type, num_occupants):
     if res_facility_type == "single-family detached":
@@ -326,26 +499,28 @@ def calc_actual_dishwasher_usgpd(
 
 
 def calc_required_dryer_specs(
-    res_facility_type,
     num_occupants,
     model_data,
     cw_label_energy_rating,
     cw_capacity,
     cw_imef,
 ):
-    adjusted_bedrooms = get_adjusted_num_bedrooms(res_facility_type, num_occupants)
+    """Derive clothes dryer CEF for the OS-HPXML operational (n_occ) path."""
     annual_elec_clothes_dryer = model_data.get_operating_condition("annual_elec_clothes_dryer")
-
     energy_target = annual_elec_clothes_dryer
 
-    rmc = (0.97 * (cw_capacity / cw_imef) - cw_label_energy_rating / 312.0) / (
-        (2.0104 * cw_capacity + 1.4242) * 0.455
-    ) + 0.04
-    acy = (164.0 + 46.5 * adjusted_bedrooms) * ((3.0 * 2.08 + 1.59) / (cw_capacity * 2.08 + 1.59))
+    rmc = _calc_dryer_residual_moisture(cw_label_energy_rating, cw_capacity, cw_imef)
+    acy = _calc_dryer_annual_cycles(num_occupants, cw_capacity)
 
-    dryer_combined_energy_factor = ((100 * (rmc - 0.04)) / 55.5) * (8.45 / energy_target) * acy
+    if rmc <= 0.04 or energy_target <= 0:
+        _warn_invalid_appliance_label(
+            model_data,
+            "Clothes dryer",
+            "non-positive residual moisture factor or energy target",
+        )
+        return 1.0
 
-    return dryer_combined_energy_factor
+    return ((100 * (rmc - 0.04)) / 55.5) * (8.45 / energy_target) * acy
 
 
 def calc_required_range_specs(res_facility_type, num_occupants, model_data):
