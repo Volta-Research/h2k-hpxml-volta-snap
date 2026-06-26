@@ -122,8 +122,7 @@ def get_heat_pump(h2k_dict, model_data):
                 **({} if is_auto_sized else {"HeatingCapacity": hp_capacity}),
                 # "HeatingCapacity17F": None, #could be included here if we had the info
                 **({} if is_auto_sized else {"CoolingCapacity": hp_capacity}),
-                # "CompressorType": "single stage", #Using HPXML's built-in defaulting at the moment
-                # defaults to “single stage” if SEER <= 15, else “two stage” if SEER <= 21, else “variable speed”.
+                "CompressorType": "single stage" if hp_cooling_seer <= 15 else "two stage" if hp_cooling_seer <= 21 else "variable speed",
                 "CoolingSensibleHeatFraction": cooling_sensible_heat_fraction,
                 **(
                     {
@@ -171,9 +170,8 @@ def get_heat_pump(h2k_dict, model_data):
                     "Value": round(hp_heating_hspf, 2),
                 },
                 "extension": {
-                    "HeatingCapacityRetention": {
+                    "HeatingCapacityFraction17F": {
                         "Fraction": 0.563635566,
-                        "Temperature": 17,
                     },  # Based on h2k HP curve
                     **(
                         {
@@ -201,8 +199,7 @@ def get_heat_pump(h2k_dict, model_data):
                 **({} if is_auto_sized else {"HeatingCapacity": hp_capacity}),
                 # "HeatingCapacity17F": None, #could be included here if we had the info
                 **({} if is_auto_sized else {"CoolingCapacity": hp_capacity}),
-                # "CompressorType": "variable speed",  # Using HPXML's built-in defaulting at the moment
-                # defaults to “single stage” if SEER <= 15, else “two stage” if SEER <= 21, else “variable speed”.
+                "CompressorType": "single stage" if hp_cooling_seer <= 15 else "two stage" if hp_cooling_seer <= 21 else "variable speed",
                 "CoolingSensibleHeatFraction": (
                     cooling_sensible_heat_fraction if heating_and_cooling else 0.76
                 ),
@@ -253,9 +250,8 @@ def get_heat_pump(h2k_dict, model_data):
                     "Value": round(hp_heating_hspf, 2),
                 },
                 "extension": {
-                    "HeatingCapacityRetention": {
+                    "HeatingCapacityFraction17F": {
                         "Fraction": 0.563635566,
-                        "Temperature": 17,
                     },  # Based on h2k HP curve
                     **(
                         {
@@ -283,6 +279,7 @@ def get_heat_pump(h2k_dict, model_data):
             "HeatPumpFuel": "electricity",
             **({} if is_auto_sized else {"HeatingCapacity": hp_capacity}),
             **({} if is_auto_sized else {"CoolingCapacity": hp_capacity}),
+            "CompressorType": "single stage",
             # Not included in water-loop-to-air HPs
             # "CoolingSensibleHeatFraction": cooling_sensible_heat_fraction,
             **(
@@ -355,6 +352,7 @@ def get_heat_pump(h2k_dict, model_data):
             "HeatPumpFuel": "electricity",
             **({} if is_auto_sized else {"HeatingCapacity": hp_capacity}),
             **({} if is_auto_sized else {"CoolingCapacity": hp_capacity}),
+            "CompressorType": "single stage",
             "CoolingSensibleHeatFraction": cooling_sensible_heat_fraction,
             **(
                 {
