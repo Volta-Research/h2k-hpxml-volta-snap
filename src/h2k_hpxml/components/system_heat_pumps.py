@@ -170,9 +170,8 @@ def get_heat_pump(h2k_dict, model_data):
                     "Value": round(hp_heating_hspf, 2),
                 },
                 "extension": {
-                    "HeatingCapacityRetention": {
+                    "HeatingCapacityFraction17F": {
                         "Fraction": 0.563635566,
-                        "Temperature": 17,
                     },  # Based on h2k HP curve
                     **(
                         {
@@ -251,9 +250,8 @@ def get_heat_pump(h2k_dict, model_data):
                     "Value": round(hp_heating_hspf, 2),
                 },
                 "extension": {
-                    "HeatingCapacityRetention": {
+                    "HeatingCapacityFraction17F": {
                         "Fraction": 0.563635566,
-                        "Temperature": 17,
                     },  # Based on h2k HP curve
                     **(
                         {
