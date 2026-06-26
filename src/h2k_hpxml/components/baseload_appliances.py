@@ -1,5 +1,7 @@
 from ..core import h2k_parser as h2k
+from ..utils.operating_conditions import HOT_WATER_REDUCTION_KEYS
 from ..utils.operating_conditions import SOC_MURB_UNIT_PARAMETERS
+from ..utils.operating_conditions import get_hot_water_reduction
 
 # ANSI/RESNET 301-2019 operational constants (match OS-HPXML hotwater_appliances.rb)
 GAL_PER_L = 3.785411784
@@ -17,12 +19,18 @@ class _UnitOperatingModelData:
         self._parent = parent_model_data
 
     def get_operating_condition(self, key, default=None):
+        if key in HOT_WATER_REDUCTION_KEYS:
+            value = self._parent.get_operating_condition(key, default)
+            return 0.0 if value is None else value
         if key in SOC_MURB_UNIT_PARAMETERS:
             return SOC_MURB_UNIT_PARAMETERS[key]
         return self._parent.get_operating_condition(key, default)
 
     def set_building_details(self, details):
         pass
+
+    def get_building_detail(self, key, default=None):
+        return self._parent.get_building_detail(key, default)
 
     def add_warning_message(self, message):
         self._parent.add_warning_message(message)
@@ -324,12 +332,22 @@ def calc_required_clothes_washer_specs(h2k_dict, num_occupants, model_data):
         h2k_dict, "clothes_washer_cycles_per_occ_week"
     )
 
-    volume_target = (
-        (CW_LITERS_PER_CYCLE / GAL_PER_L)
-        * clothes_washer_cycles_per_occ_week
-        * num_occupants
-        / 7
+    daily_clothes_washer_reduction = get_hot_water_reduction(
+        model_data, "daily_clothes_washer_reduction", num_occupants
     )
+
+    # Volume target in US Gal/day
+    volume_target = max(
+        (
+            (CW_LITERS_PER_CYCLE / GAL_PER_L)
+            * clothes_washer_cycles_per_occ_week
+            * num_occupants
+            / 7
+        )
+        - daily_clothes_washer_reduction,
+        0.0,
+    )
+
     energy_target = annual_elec_clothes_washer
 
     washer_capacity = 3
@@ -419,11 +437,20 @@ def calc_required_dishwasher_specs(h2k_dict, num_occupants, model_data):
         h2k_dict, "dishwasher_cycles_per_occ_week"
     )
 
-    volume_target = (
-        (DW_LITERS_PER_CYCLE / GAL_PER_L)
-        * dishwasher_cycles_per_occ_week
-        * num_occupants
-        / 7
+    daily_dishwasher_reduction = get_hot_water_reduction(
+        model_data, "daily_dishwasher_reduction", num_occupants
+    )
+
+    # Volume target in US Gal/day
+    volume_target = max(
+        (
+            (DW_LITERS_PER_CYCLE / GAL_PER_L)
+            * dishwasher_cycles_per_occ_week
+            * num_occupants
+            / 7
+        )
+        - daily_dishwasher_reduction,
+        0.0,
     )
     energy_target = annual_elec_dishwasher
 

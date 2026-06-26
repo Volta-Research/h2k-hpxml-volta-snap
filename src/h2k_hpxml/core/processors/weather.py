@@ -104,10 +104,10 @@ def process_weather_data(
                 model_data.set_building_details(
                     {"water_heater_inlet_temp_f": water_heater_inlet_temp_f}
                 )
-                logger.info(
-                    "Water heater inlet temperature from EPW: %.2f F",
-                    water_heater_inlet_temp_f,
-                )
+                # logger.info(
+                #     "Water heater inlet temperature from EPW: %.2f F",
+                #     water_heater_inlet_temp_f,
+                # )
             except (FileNotFoundError, ValueError, OSError) as exc:
                 logger.warning("Could not derive water heater inlet temperature from EPW: %s", exc)
                 model_data.add_warning_message(

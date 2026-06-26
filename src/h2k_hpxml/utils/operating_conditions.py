@@ -3,7 +3,7 @@
 
 # Flow for applying operating conditions
 # 1. Operating conditions not specified? Apply SOC by default
-# 2. ROC specified AND file contains the activated ROC section in <Program>? Apply ROC
+# 2. ROC specified? Apply ROC (H2K ReducedOperatingConditions overrides when present)
 # 3. General specified? Apply General, where content is taken from body of h2k file: <BaseLoads>, <Temperatures>
 
 
@@ -12,10 +12,21 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from typing import Any
 
+from ..utils.logging import get_logger
+
 if TYPE_CHECKING:
     from ..core.model import ModelData
 
+logger = get_logger(__name__)
+
 OperatingParameters = dict[str, Any]
+
+HOT_WATER_REDUCTION_KEYS = (
+    "daily_clothes_washer_reduction",
+    "daily_dishwasher_reduction",
+    "low_flow_shower_reduction",
+    "low_flow_bathroom_faucet_reduction",
+)
 
 SOC_HOUSE_PARAMETERS: OperatingParameters = {
     "num_occupants": 3,
@@ -34,6 +45,11 @@ SOC_HOUSE_PARAMETERS: OperatingParameters = {
     "annual_elec_clothes_washer": 148,  # 197 * 3/4
     "annual_elec_dishwasher": 260,
     "annual_elec_clothes_dryer": 687,  # 916 * 3/4
+    # Daily hot water reduction (US gal/day, per dwelling unit)
+    "daily_clothes_washer_reduction": 0.0,
+    "daily_dishwasher_reduction": 0.0,
+    "low_flow_shower_reduction": 0.0,
+    "low_flow_bathroom_faucet_reduction": 0.0,
 }
 
 # Per-unit values for MURB; scaled for whole-building or single-unit simulations.
@@ -52,6 +68,11 @@ SOC_MURB_UNIT_PARAMETERS: OperatingParameters = {
     "annual_elec_clothes_washer": 98.5,  # 197 * 2/4
     "annual_elec_dishwasher": 130,
     "annual_elec_clothes_dryer": 458,  # 916 * 2/4
+    # Daily hot water reduction (US gal/day, per dwelling unit)
+    "daily_clothes_washer_reduction": 0.0,
+    "daily_dishwasher_reduction": 0.0,
+    "low_flow_shower_reduction": 0.0,
+    "low_flow_bathroom_faucet_reduction": 0.0,
 }
 
 # ROC adjustments — placeholders for future implementation.
@@ -63,7 +84,7 @@ ROC_ELECTRICAL_REDUCTION = {
 }
 
 # amount of hot water reduction from SOC if ROC is applied
-# All in US Gal/day reduction
+# All in US Gal/day reduction (per dwelling unit)
 ROC_HOT_WATER_REDUCTION = {
     "low_flow_showers": 5.0,  # US Gal/day reduction
     "low_flow_bathroom_faucets": 2.6,
@@ -74,41 +95,75 @@ ROC_HOT_WATER_REDUCTION = {
 VALID_OPERATING_CONDITIONS = ("SOC", "ROC", "GENERAL")
 
 
+def get_hot_water_reduction(model_data: ModelData, key: str, num_occupants: int) -> float:
+    """
+    Return hot water reduction (US gal/day) for the occupancy scope of a calculation.
+
+    Reductions are stored per dwelling unit. Scale to the whole building when
+    num_occupants matches the building operating-condition occupant count.
+    """
+    per_unit = float(model_data.get_operating_condition(key) or 0.0)
+    building_occupants = model_data.get_operating_condition("num_occupants")
+    if building_occupants and num_occupants >= building_occupants:
+        murb_units = int(model_data.get_building_detail("murb_units") or 1)
+        return per_unit * murb_units
+    return per_unit
+
+
 def get_soc_house_parameters() -> OperatingParameters:
     """Return SOC parameters for a single-family house (3 occupants)."""
     return dict(SOC_HOUSE_PARAMETERS)
+
+
+def _get_per_unit_soc_base(building_type: str) -> OperatingParameters:
+    if building_type == "house":
+        return dict(SOC_HOUSE_PARAMETERS)
+    return dict(SOC_MURB_UNIT_PARAMETERS)
+
+
+def _scale_murb_unit_parameters_to_building(
+    per_unit: OperatingParameters,
+    num_units: int,
+    common_space_area: float = 0.0,
+) -> OperatingParameters:
+    """Scale per-unit MURB SOC/ROC parameters to a whole-building simulation."""
+    num_units = max(int(num_units), 1)
+    common_space_load = common_space_area * per_unit["daily_elec_common_space_per_m2"]
+    daily_unit_load = (
+        per_unit["daily_elec_interior_lighting"]
+        + per_unit["daily_elec_appliances"]
+        + per_unit["daily_elec_other_electrical"]
+        + per_unit["daily_elec_exterior_use"]
+    ) * num_units
+
+    scaled = {
+        "num_occupants": num_units * per_unit["num_occupants"],
+        "heating_setpoint": per_unit["heating_setpoint"],
+        "cooling_setpoint": per_unit["cooling_setpoint"],
+        "daily_elec_interior_lighting": per_unit["daily_elec_interior_lighting"] * num_units,
+        "daily_elec_appliances": per_unit["daily_elec_appliances"] * num_units,
+        "daily_elec_other_electrical": per_unit["daily_elec_other_electrical"] * num_units,
+        "daily_elec_exterior_use": per_unit["daily_elec_exterior_use"] * num_units,
+        "daily_elec_common_space": common_space_load,
+        "daily_elec_total": daily_unit_load + common_space_load,
+        "annual_elec_refrigerator": per_unit["annual_elec_refrigerator"] * num_units,
+        "annual_elec_range": per_unit["annual_elec_range"] * num_units,
+        "annual_elec_clothes_washer": per_unit["annual_elec_clothes_washer"] * num_units,
+        "annual_elec_dishwasher": per_unit["annual_elec_dishwasher"] * num_units,
+        "annual_elec_clothes_dryer": per_unit["annual_elec_clothes_dryer"] * num_units,
+    }
+    for key in HOT_WATER_REDUCTION_KEYS:
+        scaled[key] = per_unit[key]
+    return scaled
 
 
 def get_soc_murb_unit_parameters(
     num_units: int, common_space_area: float = 0.0
 ) -> OperatingParameters:
     """Return SOC parameters scaled for a MURB simulation."""
-    base = SOC_MURB_UNIT_PARAMETERS
-    num_units = max(int(num_units), 1)
-    common_space_load = common_space_area * base["daily_elec_common_space_per_m2"]
-    daily_unit_load = (
-        base["daily_elec_interior_lighting"]
-        + base["daily_elec_appliances"]
-        + base["daily_elec_other_electrical"]
-        + base["daily_elec_exterior_use"]
-    ) * num_units
-
-    return {
-        "num_occupants": num_units * base["num_occupants"],
-        "heating_setpoint": base["heating_setpoint"],
-        "cooling_setpoint": base["cooling_setpoint"],
-        "daily_elec_interior_lighting": base["daily_elec_interior_lighting"] * num_units,
-        "daily_elec_appliances": base["daily_elec_appliances"] * num_units,
-        "daily_elec_other_electrical": base["daily_elec_other_electrical"] * num_units,
-        "daily_elec_exterior_use": base["daily_elec_exterior_use"] * num_units,
-        "daily_elec_common_space": common_space_load,
-        "daily_elec_total": daily_unit_load + common_space_load,
-        "annual_elec_refrigerator": base["annual_elec_refrigerator"] * num_units,
-        "annual_elec_range": base["annual_elec_range"] * num_units,
-        "annual_elec_clothes_washer": base["annual_elec_clothes_washer"] * num_units,
-        "annual_elec_dishwasher": base["annual_elec_dishwasher"] * num_units,
-        "annual_elec_clothes_dryer": base["annual_elec_clothes_dryer"] * num_units,
-    }
+    return _scale_murb_unit_parameters_to_building(
+        SOC_MURB_UNIT_PARAMETERS, num_units, common_space_area
+    )
 
 
 def get_soc_parameters(
@@ -120,17 +175,59 @@ def get_soc_parameters(
     return get_soc_murb_unit_parameters(num_units, common_space_area)
 
 
-def apply_roc_adjustments(soc_parameters: OperatingParameters) -> OperatingParameters:
-    """
-    Apply ROC modifications to SOC base parameters.
+def _apply_roc_hot_water_reductions(per_unit: OperatingParameters) -> None:
+    per_unit["daily_clothes_washer_reduction"] = ROC_HOT_WATER_REDUCTION["clothes_washer"]
+    per_unit["daily_dishwasher_reduction"] = ROC_HOT_WATER_REDUCTION["dishwasher"]
+    per_unit["low_flow_shower_reduction"] = ROC_HOT_WATER_REDUCTION["low_flow_showers"]
+    per_unit["low_flow_bathroom_faucet_reduction"] = ROC_HOT_WATER_REDUCTION[
+        "low_flow_bathroom_faucets"
+    ]
 
-    Placeholder: returns SOC values unchanged until ROC reduction logic is defined.
+
+def apply_roc_adjustments(
+    building_type: str,
+    num_units: int,
+    common_space_area: float,
+    roc_details: dict | None,
+) -> OperatingParameters:
     """
-    adjusted = dict(soc_parameters)
-    # TODO: Apply ROC_ELECTRICAL_REDUCTION to daily lighting loads.
-    # TODO: Apply ROC_HOT_WATER_REDUCTION to hot water consumption fields.
-    _ = (ROC_ELECTRICAL_REDUCTION, ROC_HOT_WATER_REDUCTION)
-    return adjusted
+    Apply ROC modifications starting from per-unit SOC bases.
+
+    H2K ReducedOperatingConditions values are treated as per-dwelling-unit targets.
+    Whole-building MURB parameters are scaled once at the end.
+    """
+    num_units = max(int(num_units), 1)
+    per_unit = _get_per_unit_soc_base(building_type)
+    roc = roc_details or {}
+
+    lighting = roc.get("Lighting", {}).get("@value")
+    if lighting is not None:
+        per_unit["daily_elec_interior_lighting"] = float(lighting)
+
+    appliances = roc.get("ApplianceConsumption", {})
+    appliance_fields = {
+        "@refrigerator": "annual_elec_refrigerator",
+        "@range": "annual_elec_range",
+        "@clothesWasher": "annual_elec_clothes_washer",
+        "@dishWasher": "annual_elec_dishwasher",
+        "@clothesDryer": "annual_elec_clothes_dryer",
+    }
+    for h2k_key, param_key in appliance_fields.items():
+        value = appliances.get(h2k_key)
+        if value is not None and value != "":
+            per_unit[param_key] = float(value)
+
+    _apply_roc_hot_water_reductions(per_unit)
+
+    # logger.debug(
+    #     "Applied ROC operating parameters for %s (%s units)",
+    #     building_type,
+    #     num_units,
+    # )
+
+    if building_type == "house":
+        return dict(per_unit)
+    return _scale_murb_unit_parameters_to_building(per_unit, num_units, common_space_area)
 
 
 def resolve_operating_parameters(
@@ -153,15 +250,21 @@ def resolve_operating_parameters(
             "General operating condition (H2K BaseLoads/Temperatures) is not yet implemented"
         )
 
-    soc_parameters = get_soc_parameters(building_type, num_units, common_space_area)
+    if mode == "ROC":
+        roc_details = (
+            h2k_dict.get("HouseFile", {})
+            .get("Program", {})
+            .get("Options", {})
+            .get("ReducedOperatingConditions")
+        )
+        return apply_roc_adjustments(
+            building_type,
+            num_units,
+            common_space_area,
+            roc_details if isinstance(roc_details, dict) else None,
+        )
 
-    # Apply ROC if mode is specified AND the section is present in the h2k file
-    roc_details = h2k_dict.get("HouseFile", {}).get("Program", {}).get("Options", {}).get("ReducedOperatingConditions", {})
-    if mode == "ROC" and roc_details:
-        print("Applying ROC adjustments")
-        print(roc_details)
-        return apply_roc_adjustments(soc_parameters)
-    return soc_parameters
+    return get_soc_parameters(building_type, num_units, common_space_area)
 
 
 def _resolve_murb_unit_count(building_type: str, building_details: dict[str, Any]) -> int:
@@ -181,7 +284,7 @@ def apply_operating_conditions(h2k_dict: dict, model_data: ModelData, operating_
     building_details = model_data.building_details
     building_type = building_details.get("building_type", "house")
     num_units = _resolve_murb_unit_count(building_type, building_details)
-    common_space_area = float(building_details.get("common_space_area") or 0.0) / 10.7639 #This was converted to ft2 in building_details, convert it back
+    common_space_area = float(building_details.get("common_space_area") or 0.0) / 10.7639
 
     parameters = resolve_operating_parameters(
         h2k_dict,

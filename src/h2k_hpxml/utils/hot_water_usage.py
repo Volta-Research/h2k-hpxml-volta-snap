@@ -1,6 +1,7 @@
 # Utility functions that calculate expected hot water usage in HPXML
 
 from ..core import h2k_parser as h2k
+from .operating_conditions import get_hot_water_reduction
 
 # OS-HPXML specifies mixed water flow for fixtures/waste (hotwater_appliances.rb)
 T_MIX_F = 105.0
@@ -21,13 +22,20 @@ def calc_hot_to_mixed_ratio(model_data) -> float:
 def get_fixtures_multiplier(h2k_dict, model_data):
     #Target accounts for other hot water use
     target_daily_hot_water_usgpd = h2k.get_number_field(h2k_dict, "total_daily_hot_water")
+    num_occupants = model_data.get_operating_condition("num_occupants")
+    low_flow_shower_reduction = get_hot_water_reduction(
+        model_data, "low_flow_shower_reduction", num_occupants
+    )
+    low_flow_bathroom_faucet_reduction = get_hot_water_reduction(
+        model_data, "low_flow_bathroom_faucet_reduction", num_occupants
+    )
 
     clothes_washer_usgpd = model_data.get_building_detail("clothes_washer_usgpd")
     dishwasher_usgpd = model_data.get_building_detail("dishwasher_usgpd")
 
     target_fixture_waste_usgpd = target_daily_hot_water_usgpd - (
-        clothes_washer_usgpd + dishwasher_usgpd
-    )
+        clothes_washer_usgpd + dishwasher_usgpd 
+    ) - low_flow_shower_reduction - low_flow_bathroom_faucet_reduction
 
     if target_fixture_waste_usgpd <= 0:
         model_data.add_warning_message(
@@ -36,8 +44,6 @@ def get_fixtures_multiplier(h2k_dict, model_data):
             }
         )
         return 1
-
-    num_occupants = model_data.get_operating_condition("num_occupants")
 
     frac_low_flow_fixtures = 0  #TODO: update with ROC if applicable
 
