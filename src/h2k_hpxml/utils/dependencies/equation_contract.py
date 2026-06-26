@@ -15,8 +15,10 @@ from importlib import resources
 from pathlib import Path
 from typing import Any
 
+from osdep.validators import detect_hpxml_version
+
 from ...core.model import ModelData
-from .platform_utils import load_dependency_config
+from . import load_dependency_config
 
 
 @dataclass
@@ -67,8 +69,6 @@ def detect_hpxml_version_from_path(hpxml_path: Path) -> str | None:
     folder_match = re.search(r"v(\d+\.\d+\.\d+)", hpxml_path.name, re.IGNORECASE)
     if folder_match:
         return folder_match.group(1)
-
-    from .validators import detect_hpxml_version
 
     return normalize_hpxml_version(detect_hpxml_version(hpxml_path))
 

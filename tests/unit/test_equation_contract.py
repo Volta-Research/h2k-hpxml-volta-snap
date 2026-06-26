@@ -69,7 +69,7 @@ def test_source_constant_scan_fails_when_literal_drifts(tmp_path):
 
 
 def test_verify_equation_contract_against_mock_install(tmp_path):
-    install = tmp_path / "OpenStudio-HPXML-v1.9.1"
+    install = tmp_path / "OpenStudio-HPXML-v1.12.0"
     resources = install / "HPXMLtoOpenStudio" / "resources"
     resources.mkdir(parents=True)
 
@@ -117,7 +117,7 @@ def test_verify_equation_contract_against_mock_install(tmp_path):
     (install / "workflow" / "run_simulation.rb").write_text("# stub", encoding="utf-8")
 
     report = verify_equation_contract(install)
-    assert report.installed_version == "1.9.1"
+    assert report.installed_version == "1.12.0"
     assert report.ok, "\n".join(report.summary_lines())
 
 
