@@ -66,7 +66,8 @@ def process_building_details(
             }
         )
 
-        logger.info(f"BUILDING TYPE: {model_data.get_building_detail("building_type")}")
+        building_type = model_data.get_building_detail("building_type")
+        logger.info(f"BUILDING TYPE: {building_type}")
         # Handle multi-unit residential building (MURB) details
         # Note that HPXML has a method of modelling individual dwellings, but coming from an h2k file, everything will always be a whole building/unit simulation.
         # There is no explicit difference between how a house and single-murb are modelled. All differences com from the set up of components.

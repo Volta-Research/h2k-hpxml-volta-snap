@@ -125,10 +125,16 @@ def test_verify_equation_contract_against_mock_install(tmp_path):
 @pytest.mark.equation_contract
 def test_equation_contract_matches_installed_openstudio_hpxml():
     """Run full contract against the local OS-HPXML install (skip if absent)."""
+    import os
+    from pathlib import Path
+
     from h2k_hpxml.utils.dependencies import get_hpxml_os_path
 
+    if os.environ.get("H2K_SKIP_AUTO_INSTALL") == "1":
+        pytest.skip("Skipped in CI (H2K_SKIP_AUTO_INSTALL=1)")
+
     hpxml_path = get_hpxml_os_path()
-    if not hpxml_path:
+    if not hpxml_path or not Path(hpxml_path).is_dir():
         pytest.skip("OpenStudio-HPXML not installed")
 
     report = verify_equation_contract(hpxml_path)
