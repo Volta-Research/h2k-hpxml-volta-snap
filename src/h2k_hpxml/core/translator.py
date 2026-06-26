@@ -7,6 +7,8 @@ Outputs: hpxml string
 """
 
 from ..config import ConfigManager
+from ..config.translation_config import build_translation_config
+from ..exceptions import ConfigurationError
 from ..types import H2KDict
 from ..types import HPXMLDict
 from ..types import TranslationMode
@@ -43,14 +45,20 @@ def h2ktohpxml(h2k_string="", config=None):
     """
     logger.info("Starting H2K to HPXML translation")
 
-    # Handle None config
-    if config is None:
-        config = {}
+    if config is not None and not isinstance(config, dict):
+        raise ConfigurationError(
+            "Configuration must be a dictionary", config_value=str(type(config))
+        )
+
+    config = build_translation_config(overrides=config)
 
     # ================ 0. Validate inputs and get config parameters ================
     add_test_wall: bool
     translation_mode: TranslationMode
-    add_test_wall, translation_mode = _validate_and_load_configuration(h2k_string, config)
+    operating_condition: str
+    add_test_wall, translation_mode, operating_condition = _validate_and_load_configuration(
+        h2k_string, config
+    )
 
     # ================ 1. Load and parse templates ================
     h2k_dict: H2KDict
@@ -61,8 +69,13 @@ def h2ktohpxml(h2k_string="", config=None):
     config_manager = ConfigManager()
     model_data: Model.ModelData = Model.ModelData()
     model_data.set_config_manager(config_manager)
-    operating_condition = config.get("operating_condition", "SOC")
-    _process_building_details(h2k_dict, hpxml_dict, model_data, operating_condition)
+    _process_building_details(
+        h2k_dict,
+        hpxml_dict,
+        model_data,
+        translation_mode,
+        operating_condition,
+    )
 
     # ================ 3. Process weather data ================
     _process_weather_data(h2k_dict, hpxml_dict, translation_mode, config_manager, model_data)

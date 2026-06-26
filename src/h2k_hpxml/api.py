@@ -602,7 +602,7 @@ def batch_convert_h2k_files(
     input_files: list[str],
     output_directory: str,
     simulate: bool = True,
-    mode: str = "SOC",
+    mode: str = "STANDARD",
     max_workers: int | None = None,
     progress_callback: Any | None = None,
 ) -> dict[str, Any]:
@@ -613,7 +613,7 @@ def batch_convert_h2k_files(
         input_files: List of H2K file paths to convert
         output_directory: Directory for output files
         simulate: Run EnergyPlus simulation. Default: True
-        mode: Translation mode. Default: 'SOC'
+        mode: Translation mode. Default: 'STANDARD'
         max_workers: Number of parallel workers. Auto-detected if None
         progress_callback: Function called with (completed, total) for progress tracking
 

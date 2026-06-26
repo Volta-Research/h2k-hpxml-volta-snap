@@ -103,7 +103,7 @@ def test_example_h2k_files_set_numberof_residents_for_operational_path():
     h2k_str = example.read_text(encoding="utf-8")
     h2k_dict, hpxml_dict = load_and_parse_templates(h2k_str)
     model_data = ModelData()
-    process_building_details(h2k_dict, hpxml_dict, model_data, "SOC")
+    process_building_details(h2k_dict, hpxml_dict, model_data, "STANDARD", "SOC")
 
     occupancy = hpxml_dict["HPXML"]["Building"]["BuildingDetails"]["BuildingSummary"][
         "BuildingOccupancy"
@@ -121,7 +121,7 @@ def test_house_dryer_cef_is_positive_and_matches_soc_target():
     h2k_str = example.read_text(encoding="utf-8")
     h2k_dict, hpxml_dict = load_and_parse_templates(h2k_str)
     model_data = ModelData()
-    process_building_details(h2k_dict, hpxml_dict, model_data, "SOC")
+    process_building_details(h2k_dict, hpxml_dict, model_data, "STANDARD", "SOC")
 
     appliances = get_appliances(h2k_dict, model_data)
     dryer_cef = appliances["ClothesDryer"]["CombinedEnergyFactor"]
@@ -170,7 +170,7 @@ def test_murb_appliances_use_usage_multiplier_and_match_building_targets(num_uni
     )
     from h2k_hpxml.utils.operating_conditions import apply_operating_conditions
 
-    apply_operating_conditions(model_data, "SOC")
+    apply_operating_conditions(h2k_dict, model_data, "SOC")
 
     appliances = get_appliances(h2k_dict, model_data)
     num_occupants = model_data.get_operating_condition("num_occupants")

@@ -20,7 +20,11 @@ logger = get_logger(__name__)
 
 
 def process_building_details(
-    h2k_dict: H2KDict, hpxml_dict: HPXMLDict, model_data: ModelData, operating_condition: str = "SOC"
+    h2k_dict: H2KDict,
+    hpxml_dict: HPXMLDict,
+    model_data: ModelData,
+    translation_mode: str = "STANDARD",
+    operating_condition: str = "SOC",
 ) -> None:
     """
     Process building details and populate model data and HPXML structure.
@@ -84,15 +88,22 @@ def process_building_details(
             #Other fields updated when building type is "whole-murb":
             # Conditioned floor area is updated with two extra fields: common_space_area and non_res_unit_area
 
-        apply_operating_conditions(model_data, operating_condition)
+        if translation_mode == "STANDARD":
+            apply_operating_conditions(h2k_dict, model_data, operating_condition)
+        else:
+            logger.info(
+                "Skipping operating condition tables for %s translation",
+                translation_mode,
+            )
         model_data.set_building_details(
             {"hot_water_setpoint_f": resolve_hot_water_setpoint_f(h2k_dict)}
         )
-        logger.info(
-            "Operating condition: %s (%s occupants)",
-            model_data.get_operating_condition_mode(),
-            model_data.get_operating_condition("num_occupants"),
-        )
+        if translation_mode == "STANDARD":
+            logger.info(
+                "Operating condition: %s (%s occupants)",
+                model_data.get_operating_condition_mode(),
+                model_data.get_operating_condition("num_occupants"),
+            )
 
         # ================ 5. HPXML Section: Building Summary ================
         # Building site details

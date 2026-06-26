@@ -28,7 +28,7 @@ def process_weather_data(
     Args:
         h2k_dict: Parsed H2K dictionary
         hpxml_dict: Parsed HPXML dictionary
-        translation_mode: Translation mode ('SOC' or 'ASHRAE140')
+        translation_mode: Translation mode ('STANDARD' or 'ASHRAE140')
         config_manager: ConfigManager instance for weather configuration
         model_data: Optional ModelData instance for weather-derived building inputs
 

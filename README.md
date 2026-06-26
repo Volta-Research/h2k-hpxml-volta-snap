@@ -19,7 +19,7 @@ Welcome to the complete documentation for H2K-HPXML, the Canadian tool for conve
 - ✅ Domestic hot water systems
 - ✅ Lighting and plug loads
 - ✅ Weather data mapping (Canadian → US weather files)
-- ✅ Both translation modes (SOC and ASHRAE140)
+- ✅ Both translation modes (STANDARD and ASHRAE140)
 - ✅ Parallel processing for batch operations
 - ✅ Comprehensive error handling and validation
 

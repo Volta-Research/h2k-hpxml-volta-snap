@@ -1,5 +1,12 @@
 """SOC/ROC operating condition parameters for H2K to HPXML translation."""
 
+
+# Flow for applying operating conditions
+# 1. Operating conditions not specified? Apply SOC by default
+# 2. ROC specified AND file contains the activated ROC section in <Program>? Apply ROC
+# 3. General specified? Apply General, where content is taken from body of h2k file: <BaseLoads>, <Temperatures>
+
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -64,7 +71,7 @@ ROC_HOT_WATER_REDUCTION = {
     "dishwasher": 0.8,
 }
 
-VALID_OPERATING_CONDITIONS = ("SOC", "ROC")
+VALID_OPERATING_CONDITIONS = ("SOC", "ROC", "GENERAL")
 
 
 def get_soc_house_parameters() -> OperatingParameters:
@@ -127,6 +134,7 @@ def apply_roc_adjustments(soc_parameters: OperatingParameters) -> OperatingParam
 
 
 def resolve_operating_parameters(
+    h2k_dict: dict,
     operating_condition: str,
     building_type: str,
     num_units: int = 1,
@@ -140,8 +148,18 @@ def resolve_operating_parameters(
             f"Must be one of {VALID_OPERATING_CONDITIONS}"
         )
 
+    if mode == "GENERAL":
+        raise NotImplementedError(
+            "General operating condition (H2K BaseLoads/Temperatures) is not yet implemented"
+        )
+
     soc_parameters = get_soc_parameters(building_type, num_units, common_space_area)
-    if mode == "ROC":
+
+    # Apply ROC if mode is specified AND the section is present in the h2k file
+    roc_details = h2k_dict.get("HouseFile", {}).get("Program", {}).get("Options", {}).get("ReducedOperatingConditions", {})
+    if mode == "ROC" and roc_details:
+        print("Applying ROC adjustments")
+        print(roc_details)
         return apply_roc_adjustments(soc_parameters)
     return soc_parameters
 
@@ -154,7 +172,7 @@ def _resolve_murb_unit_count(building_type: str, building_details: dict[str, Any
     return int(building_details.get("res_units") or 1)
 
 
-def apply_operating_conditions(model_data: ModelData, operating_condition: str = "SOC") -> None:
+def apply_operating_conditions(h2k_dict: dict, model_data: ModelData, operating_condition: str = "SOC") -> None:
     """
     Populate model_data with operating condition parameters.
 
@@ -166,6 +184,7 @@ def apply_operating_conditions(model_data: ModelData, operating_condition: str =
     common_space_area = float(building_details.get("common_space_area") or 0.0) / 10.7639 #This was converted to ft2 in building_details, convert it back
 
     parameters = resolve_operating_parameters(
+        h2k_dict,
         operating_condition,
         building_type,
         num_units,

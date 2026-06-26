@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from h2k_hpxml.analysis import annual
+from h2k_hpxml.config.translation_config import build_translation_config
 from h2k_hpxml.core.translator import h2ktohpxml
 
 FIXTURES_DIR = Path(__file__).resolve().parents[1] / "fixtures" / "soc_operating"
@@ -43,7 +44,7 @@ def run_operating_parity_compare(
     h2k_path: Path,
     hpxml_os_path: Path,
     work_subdir: str,
-    translation_mode: str = "SOC",
+    translation_mode: str = "STANDARD",
 ) -> dict[str, Any]:
     """
     Translate one H2K file, simulate with OpenStudio-HPXML, and return flattened compare dict.
@@ -52,7 +53,15 @@ def run_operating_parity_compare(
     """
     h2k_path = Path(h2k_path)
     h2k_string = h2k_path.read_text(encoding="utf-8")
-    hpxml_string = h2ktohpxml(h2k_string, {"translation_mode": translation_mode})
+    hpxml_string = h2ktohpxml(
+        h2k_string,
+        build_translation_config(
+            overrides={
+                "translation_mode": translation_mode,
+                "operating_condition": "SOC",
+            }
+        ),
+    )
 
     output_dir = hpxml_os_path / work_subdir
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -73,7 +82,9 @@ def run_operating_parity_compare(
     if not os_results or os_results.get("Energy Use: Total (MBtu)", 0) == 0:
         raise RuntimeError(f"OpenStudio simulation produced no results for {h2k_path.name}")
 
-    h2k_results, weather_location, hot_water_load_lperday = annual.read_h2k_results(str(h2k_path))
+    h2k_results, weather_location, hot_water_load_lperday = annual.read_h2k_results(
+        str(h2k_path), operating_conditions="SOC"
+    )
     compare_dict = annual.compare_os_h2k_annual(h2k_results, os_results)
     compare_dict["location"] = weather_location
     compare_dict["hot_water_usage_Lperday_h2k"] = hot_water_load_lperday

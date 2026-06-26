@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from h2k_hpxml.analysis import annual
 from h2k_hpxml.config.manager import ConfigManager
+from h2k_hpxml.config.translation_config import build_translation_config
 from h2k_hpxml.core.translator import h2ktohpxml
 
 # Use ConfigManager instead of direct INI parsing
@@ -25,7 +26,9 @@ dest_compare_data.mkdir(parents=True, exist_ok=True)
 flags = config.simulation_flags
 print("flags", flags)
 
-translation_mode = config.get("translation", "mode", "SOC")
+translation_config = build_translation_config(config)
+translation_mode = translation_config["translation_mode"]
+operating_condition = translation_config["operating_condition"]
 
 
 # Determine whether to process as folder or single file
@@ -78,7 +81,7 @@ for filepath in h2k_files:
         with filepath.open(encoding="utf-8") as f:
             h2k_string = f.read()
 
-        hpxml_string = h2ktohpxml(h2k_string, {"translation_mode": translation_mode})
+        hpxml_string = h2ktohpxml(h2k_string, translation_config)
 
         hpxml_output_path = hpxml_output_dir / hpxml_filename
         hpxml_output_path.write_text(hpxml_string, encoding="utf-8")
@@ -118,7 +121,7 @@ for filepath in h2k_files:
 
         else:
             h2k_results, weather_location, hot_water_load_Lperday = annual.read_h2k_results(
-                str(filepath)
+                str(filepath), operating_conditions=operating_condition
             )
 
         compare_dict = annual.compare_os_h2k_annual(h2k_results, os_results)

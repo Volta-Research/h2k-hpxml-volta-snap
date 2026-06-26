@@ -25,10 +25,11 @@ def test_soc_murb_parameters_scales_with_units():
 
 
 def test_apply_operating_conditions_house():
+    h2k_dict = {"HouseFile": {"Program": {"Options": {}}}}
     model_data = ModelData()
     model_data.set_building_details({"building_type": "house"})
 
-    apply_operating_conditions(model_data, "SOC")
+    apply_operating_conditions(h2k_dict, model_data, "SOC")
 
     assert model_data.get_operating_condition_mode() == "SOC"
     assert model_data.get_operating_condition("num_occupants") == 3
@@ -36,6 +37,7 @@ def test_apply_operating_conditions_house():
 
 
 def test_apply_operating_conditions_whole_murb():
+    h2k_dict = {"HouseFile": {"Program": {"Options": {}}}}
     model_data = ModelData()
     model_data.set_building_details(
         {
@@ -45,18 +47,20 @@ def test_apply_operating_conditions_whole_murb():
         }
     )
 
-    apply_operating_conditions(model_data, "SOC")
+    apply_operating_conditions(h2k_dict, model_data, "SOC")
 
     assert model_data.get_operating_condition("num_occupants") == 20
     assert model_data.get_building_detail("murb_units") == 10
 
 
 def test_roc_placeholder_returns_soc_values():
-    soc = resolve_operating_parameters("SOC", "house")
-    roc = resolve_operating_parameters("ROC", "house")
+    h2k_dict = {"HouseFile": {"Program": {"Options": {}}}}
+    soc = resolve_operating_parameters(h2k_dict, "SOC", "house")
+    roc = resolve_operating_parameters(h2k_dict, "ROC", "house")
     assert roc == soc
 
 
 def test_invalid_operating_condition_raises():
+    h2k_dict = {"HouseFile": {"Program": {"Options": {}}}}
     with pytest.raises(ValueError, match="Invalid operating condition"):
-        resolve_operating_parameters("HOC", "house")
+        resolve_operating_parameters(h2k_dict, "HOC", "house")
