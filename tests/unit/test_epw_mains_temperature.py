@@ -14,9 +14,8 @@ LONDON_EPW = (
 
 
 def test_epw_path_from_weather_file_appends_extension():
-    weather_file = (
-        r"C:\OpenStudio-HPXML\weather\CAN_ON_Ottawa.Intl.AP.716280_CWEC2020"
-    )
+    # Use a relative pathlib path so separators are correct on Windows and Linux CI.
+    weather_file = str(Path("weather") / "CAN_ON_Ottawa.Intl.AP.716280_CWEC2020")
     epw_path = epw_path_from_weather_file(weather_file)
     assert epw_path.name == "CAN_ON_Ottawa.Intl.AP.716280_CWEC2020.epw"
 
