@@ -1,23 +1,16 @@
 from ..core import data_utils as obj
 from ..core import h2k_parser as h2k
+from ..utils.hot_water_setpoint import resolve_hot_water_setpoint_f
 
 
 # Here we always return an array of objects, because we could be dealing with a primary + secondary system configuration
 def get_hot_water_systems(h2k_dict, model_data):
-    hot_water_temperature = h2k.get_number_field(h2k_dict, "hot_water_temperature")
-    hot_water_temperature_adv_uspec = h2k.get_number_field(
-        h2k_dict, "hot_water_temperature_adv_uspec"
-    )
+    hot_water_temperature = model_data.get_building_detail("hot_water_setpoint_f")
+    if hot_water_temperature is None:
+        hot_water_temperature = resolve_hot_water_setpoint_f(h2k_dict)
+        model_data.set_building_details({"hot_water_setpoint_f": hot_water_temperature})
 
-    model_data.set_building_details(
-        {
-            "hot_water_temperature": (
-                hot_water_temperature
-                if hot_water_temperature > 0
-                else hot_water_temperature_adv_uspec
-            ),
-        }
-    )
+    model_data.set_building_details({"hot_water_temperature": hot_water_temperature})
 
     hpxml_dhw = []
     hpxml_solar_dhw = {}

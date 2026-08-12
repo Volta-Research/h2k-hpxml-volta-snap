@@ -1,0 +1,32 @@
+name: Build & Push base image
+
+# Builds the h2k-hpxml base image that the volta-snap backend consumes
+# (Dockerfile.h2k FROM ...:latest). Runs on main; SHA + latest tags pushed.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+env:
+  IMAGE: northamerica-northeast1-docker.pkg.dev/volta-snap-h2k-eplus/h2k-hpxml-volta-snap/h2k-hpxml
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest  # amd64 native — matches prod, no emulation
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY_JSON }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker auth
+        run: gcloud auth configure-docker northamerica-northeast1-docker.pkg.dev -q
+
+      - name: Build
+        run: docker build -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:latest" .
+
+      - name: Push
+        run: docker push --all-tags "$IMAGE"
