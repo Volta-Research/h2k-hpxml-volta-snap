@@ -931,6 +931,45 @@
         "decimals": 2,
         "default": 0
     },
+    "hot_water_standby_heat_loss": {
+        "address": {
+            "h2k": "EnergyFactor,@standbyHeatLoss",
+            "hpxml": "HPXML,Building,BuildingDetails,Systems,WaterHeating,WaterHeatingSystem,EnergyFactor"
+        },
+        "units": {
+            "unit_type": "power",
+            "h2k_units": "W",
+            "hpxml_units": "W"
+        },
+        "decimals": 4,
+        "default": 0
+    },
+    "hot_water_standby_thermal_efficiency": {
+        "address": {
+            "h2k": "EnergyFactor,@thermalEfficiency",
+            "hpxml": "HPXML,Building,BuildingDetails,Systems,WaterHeating,WaterHeatingSystem,EnergyFactor"
+        },
+        "units": {
+            "unit_type": "fraction",
+            "h2k_units": "%",
+            "hpxml_units": "fraction"
+        },
+        "decimals": 2,
+        "default": 0
+    },
+    "hot_water_standby_input_capacity": {
+        "address": {
+            "h2k": "EnergyFactor,@inputCapacity",
+            "hpxml": "HPXML,Building,BuildingDetails,Systems,WaterHeating,WaterHeatingSystem,EnergyFactor"
+        },
+        "units": {
+            "unit_type": "power",
+            "h2k_units": "W",
+            "hpxml_units": "W"
+        },
+        "decimals": 4,
+        "default": 0
+    },
     "hot_water_temperature": {
         "address": {
             "h2k": "HouseFile,House,BaseLoads,WaterUsage,@temperature",
@@ -957,6 +996,7 @@
         "decimals": 1,
         "default": 125
     },
+
     "heat_pump_heating_efficiency": {
         "address": {
             "h2k": "Specifications,HeatingEfficiency,@value",
