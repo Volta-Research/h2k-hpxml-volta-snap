@@ -1,10 +1,11 @@
 name: Build & Push base image
 
 # Builds the h2k-hpxml base image that the volta-snap backend consumes
-# (Dockerfile.h2k FROM ...:latest). Runs on main; SHA + latest tags pushed.
+# (Dockerfile.h2k FROM ...:latest). Runs on main, which pushes SHA + latest,
+# and on the necb branch, which pushes SHA + necb. The necb tag is the NECB test path's base image.
 on:
   push:
-    branches: [main]
+    branches: [main, necb-4-6-storey-murbs]
   workflow_dispatch: {}
 
 env:
@@ -26,7 +27,17 @@ jobs:
         run: gcloud auth configure-docker northamerica-northeast1-docker.pkg.dev -q
 
       - name: Build
-        run: docker build -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:latest" .
+        run: docker build -t "$IMAGE:${{ github.sha }}" .
+
+      - name: Tag
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          case "$BRANCH" in
+            main) docker tag "$IMAGE:${{ github.sha }}" "$IMAGE:latest" ;;
+            necb-4-6-storey-murbs) docker tag "$IMAGE:${{ github.sha }}" "$IMAGE:necb" ;;
+            *) echo "No image tag for branch $BRANCH"; exit 1 ;;
+          esac
 
       - name: Push
         run: docker push --all-tags "$IMAGE"
